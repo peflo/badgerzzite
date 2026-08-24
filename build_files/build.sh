@@ -32,19 +32,24 @@ dnf5 install -y solaar
 # --- Build Katana USB Audio Driver ---
 echo "Building Katana USB Audio Driver..."
 
-# 1. Install build dependencies (kernel-devel must match the base image kernel)
-# The base image already has the kernel installed, so we just need devel + tools
-dnf5 install -y kernel-devel-$(uname -r) gcc make git
+# 1. Detect the kernel version INSTALLED in the base image
+# We grep rpm database for the kernel-core package to get the exact version string
+IMAGE_KERNEL_VERSION=$(rpm -qa kernel-core | sed 's/kernel-core-//')
 
-# 2. Clone and Compile
+echo "Detected image kernel: $IMAGE_KERNEL_VERSION"
+
+# 2. Install build dependencies matching THAT specific kernel
+dnf5 install -y "kernel-devel-${IMAGE_KERNEL_VERSION}" gcc make git
+
+# 3. Clone and Compile
 cd /tmp
 git clone https://github.com/mrworf/katana-usb-audio.git
 cd katana-usb-audio
 make
 make install
 
-# 3. Cleanup build dependencies to reduce image size
-dnf5 remove -y kernel-devel-$(uname -r) gcc make git
+# 4. Cleanup build dependencies to reduce image size
+dnf5 remove -y kernel-devel-$(IMAGE_KERNEL_VERSION) gcc make git
 rm -rf /tmp/katana-usb-audio
 
 echo "Katana Driver build complete."
