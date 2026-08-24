@@ -25,3 +25,27 @@ dnf5 install -y tmux
 #### Example for enabling a System Unit File
 
 systemctl enable podman.socket
+
+# --- Install Solaar ---
+dnf5 install -y solaar
+
+# --- Build Katana USB Audio Driver ---
+echo "Building Katana USB Audio Driver..."
+
+# 1. Install build dependencies (kernel-devel must match the base image kernel)
+# The base image already has the kernel installed, so we just need devel + tools
+dnf5 install -y kernel-devel-$(uname -r) gcc make git
+
+# 2. Clone and Compile
+cd /tmp
+git clone https://github.com/mrworf/katana-usb-audio.git
+cd katana-usb-audio
+make
+make install
+
+# 3. Cleanup build dependencies to reduce image size
+dnf5 remove -y kernel-devel-$(uname -r) gcc make git
+rm -rf /tmp/katana-usb-audio
+
+echo "Katana Driver build complete."
+# --- End Katana Build ---
